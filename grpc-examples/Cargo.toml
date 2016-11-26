@@ -9,6 +9,14 @@ doctest = false
 [dependencies.grpc]
 path = ".."
 
+[[bin]]
+name = "counter_server"
+path = "src/bin/counter_server.rs"
+
+[[bin]]
+name = "counter_client"
+path = "src/bin/counter_client.rs"
+
 [dependencies]
 protobuf        = { git = "http://github.com/stepancheg/rust-protobuf" }
 futures         = "0.1.2"

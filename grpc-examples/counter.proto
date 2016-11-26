@@ -1,0 +1,13 @@
+package counter;
+
+service CounterService {
+    rpc Count (Request) returns (Reply) {}
+}
+
+message Request {
+    required string url = 1;
+}
+
+message Reply {
+    required string status = 1;
+}

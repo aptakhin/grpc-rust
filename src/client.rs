@@ -106,6 +106,7 @@ impl GrpcClient {
     pub fn call_impl<Req : Send + 'static, Resp : Send + 'static>(&self, req: GrpcStreamSend<Req>, method: Arc<MethodDescriptor<Req, Resp>>)
         -> GrpcStreamSend<Resp>
     {
+        println!("GrpcClient::call_impl");
         let host = self.host.clone();
         let http_scheme = self.http_scheme.clone();
         let http_conn = self.loop_to_client.http_conn.clone();
@@ -117,23 +118,28 @@ impl GrpcClient {
             Header::new(":scheme", http_scheme.as_bytes()),
         ];
 
+        println!("GrpcClient::call_impl::req_frames");
         let request_frames = {
             let method = method.clone();
             req
                 .and_then(move |req| {
+                    println!("GrpcClient::call_impl::method.req_marshaller.write");
                     let grpc_frame = method.req_marshaller.write(&req)?;
                     Ok(write_grpc_frame_to_vec(&grpc_frame))
                 })
-                .map_err(|e| HttpError::Other(Box::new(e)))
+                .map_err(|e| {
+                    println!("GrpcClient::call_impl::map_err, {}", e);
+                    HttpError::Other(Box::new(e))
+                })
         };
-
+        println!("GrpcClient::call_impl::start_request");
         let http_response_stream = http_conn
             .start_request(
                 headers,
                 Box::new(request_frames));
 
         let grpc_frames = GrpcFrameFromHttpFramesStreamResponse::new(http_response_stream);
-
+        println!("GrpcClient::call_impl::grpc_frames");
         let grpc_messages = grpc_frames.and_then(move |frame| method.resp_marshaller.read(&frame));
 
         Box::new(grpc_messages)
@@ -142,6 +148,7 @@ impl GrpcClient {
     pub fn call_unary<Req : Send + 'static, Resp : Send + 'static>(&self, req: Req, method: Arc<MethodDescriptor<Req, Resp>>)
         -> GrpcFutureSend<Resp>
     {
+        println!("GrpcClient::call_unary");
         Box::new(stream_single(self.call_impl(Box::new(stream::once(Ok(req))), method)))
     }
 

@@ -8,3 +8,6 @@ pub mod helloworld_grpc;
 
 pub mod route_guide;
 pub mod route_guide_grpc;
+
+pub mod counter;
+pub mod counter_grpc;

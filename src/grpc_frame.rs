@@ -82,6 +82,7 @@ pub fn parse_grpc_frame_completely(stream: &[u8]) -> GrpcResult<&[u8]> {
 pub fn write_grpc_frame(stream: &mut Vec<u8>, frame: &[u8]) {
 	stream.push(0); // compressed flag
 	stream.extend(&write_u32_be(frame.len() as u32));
+    println!("write_grpc_frame");
 	stream.extend(frame);
 }
 
@@ -139,11 +140,13 @@ impl Stream for GrpcFrameFromHttpFramesStreamRequest {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         loop {
             if let Some(ref mut error) = self.error {
+                println!("GrpcFrameFromHttpFramesStreamRequest::poll::err");
                 return error.poll();
             }
 
             if let Some((frame, len)) = parse_grpc_frame(&self.buf)?.map(|(frame, len)| (frame.to_owned(), len)) {
                 self.buf.drain(..len);
+                println!("GrpcFrameFromHttpFramesStreamRequest::poll::ready1");
                 return Ok(Async::Ready(Some(frame)));
             }
 
@@ -151,8 +154,10 @@ impl Stream for GrpcFrameFromHttpFramesStreamRequest {
             let part = match part_opt {
                 None => {
                     if self.buf.is_empty() {
+                        println!("GrpcFrameFromHttpFramesStreamRequest::poll::ready2");
                         return Ok(Async::Ready(None));
                     } else {
+                        println!("GrpcFrameFromHttpFramesStreamRequest::poll::partial_frame");
                         self.error = Some(stream_err(GrpcError::Other("partial frame")));
                         continue;
                     }
